@@ -15,7 +15,7 @@ SYSTEM_PROMPT = """You are a marketing analytics agent. You analyze campaign per
 
 When asked a question:
 1. First load the campaign data to understand what's available.
-2. Compute the relevant metrics (roi, cpa, ctr, conversion_rate, summary).
+2. Compute the relevant metrics (roi, roas, cpa, ctr, conversion_rate, summary).
 3. If the question involves trends or comparisons, create a chart.
 4. If asked about problems or anomalies, run anomaly detection.
 
@@ -50,8 +50,7 @@ def run_analytics(query: str) -> AgentOutput:
             tool_fn = {t.name: t for t in TOOLS}[tc["name"]]
             result = tool_fn.invoke(tc["args"])
 
-            # Capture chart outputs
-            if tc["name"] == "create_chart" and not result.startswith("Unknown"):
+            if tc["name"] == "create_chart" and not result.startswith(("Unknown", "No positive", "Column")):
                 charts.append(result)
 
             from langchain_core.messages import ToolMessage
@@ -72,25 +71,36 @@ def run_analytics_no_llm(query: str) -> AgentOutput:
     """Fallback analytics without LLM — keyword-based routing for demos/tests."""
     query_lower = query.lower()
 
-    # Always load data summary
     data_summary = load_campaign_data.invoke({"path": ""})
 
     charts: list[str] = []
 
-    if any(w in query_lower for w in ["roi", "рои", "окупаемость", "эффективность"]):
-        metrics = compute_metrics.invoke({"metric": "roi", "group_by": "channel"})
-        chart = create_chart.invoke({"chart_type": "bar", "metric": "roi"})
+    if any(w in query_lower for w in ["roi", "рои", "окупаемость", "эффективность", "roas"]):
+        metrics = compute_metrics.invoke({"metric": "roas", "group_by": ""})
+        chart = create_chart.invoke({"chart_type": "bar", "metric": "roas"})
         charts.append(chart)
-    elif any(w in query_lower for w in ["cpa", "стоимость", "цена"]):
-        metrics = compute_metrics.invoke({"metric": "cpa", "group_by": "channel"})
+    elif any(w in query_lower for w in ["cpa", "стоимость", "цена", "расход", "spend"]):
+        metrics = compute_metrics.invoke({"metric": "cpa", "group_by": ""})
         chart = create_chart.invoke({"chart_type": "bar", "metric": "spend"})
         charts.append(chart)
-    elif any(w in query_lower for w in ["аномал", "проблем", "anomal"]):
+    elif any(w in query_lower for w in ["аномал", "проблем", "anomal", "бот", "мусор"]):
         metrics = detect_anomalies.invoke({"threshold": 2.0})
         chart = create_chart.invoke({"chart_type": "line", "metric": "spend"})
         charts.append(chart)
+    elif any(w in query_lower for w in ["ctr", "клик", "click"]):
+        metrics = compute_metrics.invoke({"metric": "ctr", "group_by": ""})
+        chart = create_chart.invoke({"chart_type": "bar", "metric": "ctr"})
+        charts.append(chart)
+    elif any(w in query_lower for w in ["формат", "format", "video", "banner"]):
+        metrics = compute_metrics.invoke({"metric": "summary", "group_by": "ad_format"})
+        chart = create_chart.invoke({"chart_type": "bar", "metric": "spend", "group_by": "ad_format"})
+        charts.append(chart)
+    elif any(w in query_lower for w in ["устройств", "device", "mobile", "desktop"]):
+        metrics = compute_metrics.invoke({"metric": "summary", "group_by": "device"})
+        chart = create_chart.invoke({"chart_type": "pie", "metric": "conversions", "group_by": "device"})
+        charts.append(chart)
     else:
-        metrics = compute_metrics.invoke({"metric": "summary", "group_by": "channel"})
+        metrics = compute_metrics.invoke({"metric": "summary", "group_by": ""})
         chart = create_chart.invoke({"chart_type": "bar", "metric": "revenue"})
         charts.append(chart)
 

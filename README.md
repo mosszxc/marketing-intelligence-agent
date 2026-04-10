@@ -77,9 +77,9 @@ docker compose up
 
 ## Screenshots
 
-| Analytics Query | Research Query | Human-in-the-loop |
+| Empty State | HITL Approval | Analytics Result |
 |:-:|:-:|:-:|
-| ![Analytics](screenshots/analytics-query.png) | ![Research](screenshots/research-query.png) | ![HITL](screenshots/hitl-approval.png) |
+| ![Empty](screenshots/redesign-empty.png) | ![HITL](screenshots/redesign-hitl.png) | ![Result](screenshots/redesign-result.png) |
 
 ## Features
 

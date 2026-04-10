@@ -1,49 +1,52 @@
 [
   {
-    "id": "analytics_roi_channels",
-    "query": "Покажи ROI по каналам",
+    "id": "analytics_roas_campaigns",
+    "query": "Покажи ROAS по кампаниям",
     "expected_agents": ["analytics"],
-    "expected_contains": ["ROI", "google_ads", "email", "seo"],
+    "expected_contains": ["ROAS", "retargeting_cart", "brand_awareness"],
     "expected_facts": {
-      "best_roi_channel": "email",
-      "worst_roi_channel": "tiktok_ads",
-      "all_roi_positive": true
+      "best_roas_campaign": "retargeting_cart",
+      "worst_roas_campaign": "brand_awareness"
     }
   },
   {
     "id": "analytics_cpa",
-    "query": "Какой CPA по каналам?",
+    "query": "Какой CPA по кампаниям?",
     "expected_agents": ["analytics"],
-    "expected_contains": ["CPA", "channel"],
+    "expected_contains": ["CPA", "campaign"],
     "expected_facts": {
-      "lowest_cpa_channel": "email"
+      "lowest_cpa_campaign": "promo_seasonal"
     }
   },
   {
     "id": "analytics_anomalies",
     "query": "Найди аномалии в данных кампаний",
     "expected_agents": ["analytics"],
-    "expected_contains": ["аномал"],
+    "expected_contains": ["anomal"],
     "expected_facts": {
-      "has_tiktok_anomaly": true,
-      "has_email_anomaly": true
-    }
-  },
-  {
-    "id": "analytics_summary",
-    "query": "Общая сводка по кампаниям",
-    "expected_agents": ["analytics"],
-    "expected_contains": ["spend", "revenue"],
-    "expected_facts": {
-      "total_channels": 6,
-      "total_months": 12
+      "has_bot_traffic": true,
+      "has_cpc_spike": true
     }
   },
   {
     "id": "analytics_spend",
-    "query": "Расход по каналам за год",
+    "query": "Расход по кампаниям за весь период",
     "expected_agents": ["analytics"],
-    "expected_contains": ["spend", "channel"],
+    "expected_contains": ["spend", "campaign"],
+    "expected_facts": {}
+  },
+  {
+    "id": "analytics_ctr",
+    "query": "CTR по форматам объявлений",
+    "expected_agents": ["analytics"],
+    "expected_contains": ["CTR", "video"],
+    "expected_facts": {}
+  },
+  {
+    "id": "analytics_devices",
+    "query": "Сравни эффективность desktop и mobile",
+    "expected_agents": ["analytics"],
+    "expected_contains": ["desktop", "mobile"],
     "expected_facts": {}
   },
   {
@@ -54,45 +57,40 @@
     "expected_facts": {}
   },
   {
-    "id": "research_competitors",
-    "query": "Что делают конкуренты в рекламе?",
-    "expected_agents": ["research"],
-    "expected_contains": ["URL:"],
-    "expected_facts": {}
-  },
-  {
     "id": "research_market",
-    "query": "Прогноз рынка цифровой рекламы",
+    "query": "Что происходит на рынке контекстной рекламы?",
     "expected_agents": ["research"],
-    "expected_contains": [],
+    "expected_contains": ["реклам"],
     "expected_facts": {}
   },
   {
-    "id": "mixed_roi_benchmark",
-    "query": "Сравни наш ROI с рыночными бенчмарками",
+    "id": "both_roas_vs_market",
+    "query": "Сравни наш ROAS с рыночными бенчмарками",
     "expected_agents": ["analytics", "research"],
-    "expected_contains": ["ROI", "Аналитика", "Исследование"],
+    "expected_contains": ["ROAS"],
     "expected_facts": {}
   },
   {
-    "id": "mixed_anomaly_market",
+    "id": "both_anomalies_and_market",
     "query": "Есть ли аномалии в расходах и что происходит на рынке?",
     "expected_agents": ["analytics", "research"],
-    "expected_contains": ["Аналитика", "Исследование"],
+    "expected_contains": ["anomal"],
     "expected_facts": {}
   },
   {
-    "id": "mixed_efficiency",
-    "query": "Насколько эффективны наши кампании по сравнению с индустрией?",
-    "expected_agents": ["analytics", "research"],
-    "expected_contains": ["Аналитика", "Исследование"],
-    "expected_facts": {}
-  },
-  {
-    "id": "analytics_conversion",
-    "query": "Покажи конверсию по каналам",
+    "id": "analytics_revenue",
+    "query": "Какая кампания приносит больше всего выручки?",
     "expected_agents": ["analytics"],
-    "expected_contains": ["channel"],
+    "expected_contains": ["revenue"],
+    "expected_facts": {
+      "top_revenue_campaign": "retargeting_cart"
+    }
+  },
+  {
+    "id": "research_competitors",
+    "query": "Что делают конкуренты в digital маркетинге?",
+    "expected_agents": ["research"],
+    "expected_contains": ["конкурент"],
     "expected_facts": {}
   }
 ]

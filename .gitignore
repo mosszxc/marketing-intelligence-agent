@@ -14,3 +14,4 @@ node_modules/
 ui/dist/
 ui/node_modules/
 static/
+SPEC.md

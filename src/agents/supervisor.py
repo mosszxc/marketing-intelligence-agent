@@ -28,7 +28,17 @@ ANALYTICS_KEYWORDS = {
 RESEARCH_KEYWORDS = {
     "тренд", "рынок", "рыноч", "рынке", "рынка", "конкурент", "индустри", "новост", "бенчмарк",
     "benchmark", "отрасл", "trend", "competitor", "market", "news", "исследован",
-    "прогноз", "forecast",
+}
+STRATEGY_KEYWORDS = {
+    "перераспредел", "оптимизир", "что если", "what if", "стратег", "strategy",
+    "перенаправ", "куда направ", "куда перевест",
+    "масштабир", "scale", "реаллок", "realloc",
+}
+RAG_KEYWORDS = {
+    "документ", "document", "pdf", "файл", "file", "загружен",
+    "в нашем плане", "наша стратег", "в документе", "в файле",
+    "kpi цел", "kpi target", "написано в", "нашей стратеги",
+    "наш план", "нашем плане",
 }
 
 
@@ -70,6 +80,19 @@ def _classify_keywords(query: str) -> list[str]:
 
     has_analytics = any(kw in query_lower for kw in ANALYTICS_KEYWORDS)
     has_research = any(kw in query_lower for kw in RESEARCH_KEYWORDS)
+    has_strategy = any(kw in query_lower for kw in STRATEGY_KEYWORDS)
+    has_rag = any(kw in query_lower for kw in RAG_KEYWORDS)
+
+    # RAG takes priority for document-specific queries
+    if has_rag:
+        return ["rag"]
+
+    # Strategy takes priority when detected
+    if has_strategy:
+        agents = ["strategy"]
+        if has_analytics:
+            agents.insert(0, "analytics")
+        return agents
 
     if has_analytics and has_research:
         return ["analytics", "research"]

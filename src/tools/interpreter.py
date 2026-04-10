@@ -8,7 +8,7 @@ No LLM required. Pure logic:
 
 import pandas as pd
 
-from src.tools.data_loader import load_dataframe, _detect_group_column
+from src.tools.data_loader import _detect_group_column
 
 
 # ---------------------------------------------------------------------------

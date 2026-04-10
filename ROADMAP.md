@@ -283,15 +283,197 @@
 
 ---
 
-## Опционально (post-MVP)
+## Phase 11: Strategy Agent
 
-| Phase | Что | Когда |
-|-------|-----|-------|
-| 11 | Strategy Agent — прогнозы, сценарии what-if | После найма / фриланс-заказа |
-| 12 | MCP сервер — подключение как tool к Claude/Cursor | Когда нужен MCP в портфолио |
-| 13 | RAG по документам компании — загрузка PDF/стратегий | Для фриланс-кейса |
-| 14 | React UI + FastAPI backend | Для production-версии |
-| 15 | Google Ads / Meta Ads API интеграция | Для реального клиента |
+**Цель:** агент даёт рекомендации по бюджету, прогнозирует метрики и моделирует what-if сценарии на основе данных Analytics и Research агентов.
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 11.1 | Strategy Agent базовый | `agents/strategy.py` — принимает `agent_outputs` (analytics + research), возвращает `AgentOutput` с рекомендациями. Без LLM — rule-based |
+| 11.2 | Budget reallocation | На вход: метрики по каналам. На выход: рекомендация перераспределения бюджета с обоснованием (ROAS-based). Формат: таблица "канал → текущий % → рекомендуемый % → причина" |
+| 11.3 | What-if моделирование | Функция `what_if(scenario)` — принимает параметр ("увеличить бюджет email +20%"), возвращает прогноз метрик на основе линейной экстраполяции текущих данных |
+| 11.4 | Интеграция в граф | Strategy Agent как нода в LangGraph. Supervisor может роутить на `strategy`. `classify_query()` распознаёт запросы типа "что если...", "куда перераспределить" |
+| 11.5 | Тесты | 4+ теста: budget reallocation на demo_campaigns.csv возвращает таблицу, what-if возвращает прогноз, supervisor роутит "куда перераспределить бюджет" → strategy, все существующие тесты зелёные |
+
+**Результат:** "Куда перераспределить бюджет?" → конкретная таблица перераспределения с обоснованием + прогноз.
+
+---
+
+## Phase 12: MCP Server
+
+**Цель:** система доступна как MCP tool для Claude/Cursor — можно вызывать маркетинговый анализ прямо из IDE или Claude Desktop.
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 12.1 | MCP server scaffold | `src/mcp_server.py` — MCP server с `@tool` декоратором. Запуск: `python -m src.mcp_server`. Сервер стартует без ошибок |
+| 12.2 | Tool: analyze_marketing | MCP tool `analyze_marketing(query: str) -> str` — вызывает `build_graph().invoke()`, возвращает `final_answer`. Работает с demo-данными |
+| 12.3 | Tool: get_campaign_metrics | MCP tool `get_campaign_metrics(channel?: str) -> str` — возвращает метрики по каналу или все каналы. JSON output |
+| 12.4 | Tool: detect_anomalies | MCP tool `detect_anomalies() -> str` — возвращает приоритизированные аномалии из analytics agent |
+| 12.5 | Claude Desktop конфиг | `mcp-config.json` — пример конфигурации для Claude Desktop. Документация в README: как подключить |
+| 12.6 | Тесты | 3+ теста: каждый tool возвращает валидный ответ, server стартует без ошибок, tool `analyze_marketing` возвращает строку с секцией "Аналитика" |
+
+**Результат:** `claude mcp add marketing-agent` → маркетинговый анализ доступен как tool в Claude.
+
+---
+
+## Phase 13: RAG по документам компании
+
+**Цель:** пользователь загружает PDF/DOCX — система индексирует и отвечает на вопросы с учётом внутренних документов компании.
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 13.1 | Document loader | `tools/doc_loader.py` — загрузка PDF/DOCX/TXT. Chunking: RecursiveCharacterTextSplitter, 1000 chars, 200 overlap. Возвращает list[Document] |
+| 13.2 | Vector store | `tools/vector_store.py` — ChromaDB collection `company_docs`. Функции: `index_documents(docs)`, `search(query, k=5) -> list[Document]` |
+| 13.3 | RAG Agent | `agents/rag.py` — retrieval + generation. На запрос "что в нашей стратегии про email" → ищет в vector store → формирует ответ с цитатами |
+| 13.4 | Upload в UI | Streamlit sidebar: file uploader (PDF/DOCX). При загрузке: parse → chunk → index. Показать "Indexed N chunks from filename.pdf" |
+| 13.5 | Интеграция в граф | RAG Agent как нода. Supervisor роутит запросы про "нашу стратегию", "наш план", "в документе" → rag |
+| 13.6 | Тесты | 4+ теста: chunking разбивает текст на чанки нужного размера, vector search возвращает релевантные чанки, RAG agent формирует ответ с источниками, upload + query e2e |
+
+**Результат:** загрузил PDF стратегии → "что мы планируем по email?" → ответ с цитатами из документа.
+
+---
+
+## Phase 14: React UI + FastAPI Backend
+
+**Цель:** заменить Streamlit на production-стек: FastAPI (async API) + React (SPA). Все существующие фичи (чат, графики, HITL, streaming) работают в новом UI.
+
+### 14.1 FastAPI Backend
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 14.1.1 | Структура проекта | `src/api/` — FastAPI app. `src/api/main.py` — точка входа. `uvicorn src.api.main:app` стартует на порту 8000 |
+| 14.1.2 | POST /api/query | Принимает `{query: str, thread_id?: str}`. Возвращает `{thread_id, plan, final_answer, charts: str[], sources: []}`. Вызывает `build_graph().invoke()` |
+| 14.1.3 | POST /api/query/stream | SSE endpoint. Стримит события: `{event: "node_start", node: "supervisor"}`, `{event: "node_end", node: "supervisor", data: {...}}`, `{event: "done", data: {final_answer, charts, sources}}` |
+| 14.1.4 | POST /api/approve | Принимает `{thread_id: str, plan?: str[]}`. Резьюмит HITL граф. Возвращает `{final_answer, charts, sources}` |
+| 14.1.5 | GET /api/health | Возвращает `{status: "ok", version: "0.2.0"}` |
+| 14.1.6 | CORS + middleware | CORS разрешает `localhost:5173` (Vite dev). Request logging middleware |
+| 14.1.7 | Pydantic schemas | `src/api/schemas.py` — `QueryRequest`, `QueryResponse`, `StreamEvent`, `ApproveRequest`, `HealthResponse`. Все типизированы |
+| 14.1.8 | Тесты backend | 6+ тестов: health endpoint 200, query возвращает plan + final_answer, stream возвращает SSE события, approve резьюмит HITL, невалидный request → 422, thread isolation |
+
+**DOD backend:** `pytest tests/test_api.py` — все зелёные. `curl localhost:8000/api/health` → `{"status": "ok"}`.
+
+### 14.2 React Frontend
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 14.2.1 | Vite + React + TypeScript scaffold | `ui/` — `npm create vite`, React 19 + TypeScript. `npm run dev` стартует на порту 5173 |
+| 14.2.2 | Design tokens из Streamlit | CSS variables: `--primary`, `--bg`, `--surface`, etc. Шрифты: Inter + Fira Code. Tailwind с custom tokens |
+| 14.2.3 | Layout: Sidebar + Chat | Sidebar (260px, тёмная тема): лого, new conversation, example queries, agents list. Main: chat area + input |
+| 14.2.4 | Chat компонент | Список сообщений (user/assistant). Markdown rendering (react-markdown). Inline графики (base64 → img). Sources как ссылки |
+| 14.2.5 | Streaming UI | При отправке запроса: показать прогресс по нодам (supervisor → analytics → ...). EventSource для SSE. Каждая нода — строка статуса |
+| 14.2.6 | HITL flow | После supervisor: показать план. Кнопки: Approve (primary), Analytics only, Research only. По клику → POST /api/approve |
+| 14.2.7 | Welcome state | Пустой чат: иконка + "Ask about your marketing data" + example query cards (кликабельные) |
+| 14.2.8 | Responsive | Mobile: sidebar скрывается, chat full-width. Breakpoint: 768px |
+| 14.2.9 | API client | `src/lib/api.ts` — функции `sendQuery()`, `streamQuery()`, `approveplan()`, `healthCheck()`. Типизированные |
+| 14.2.10 | Тесты frontend | 5+ тестов (Vitest): ChatMessage рендерит markdown, Sidebar показывает example queries, HITL buttons вызывают approve API, welcome state отображается при пустом чате, API client формирует правильные запросы |
+
+**DOD frontend:** `npm test` — все зелёные. `npm run dev` → UI на localhost:5173, подключается к FastAPI на 8000.
+
+### 14.3 Интеграция + Polish
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 14.3.1 | Docker compose | `docker-compose.yml` обновлён: `api` (FastAPI, порт 8000) + `ui` (nginx, порт 3000). `docker compose up` → рабочая система |
+| 14.3.2 | E2E: query → result | Отправить запрос через React UI → FastAPI → LangGraph → ответ с графиками в UI |
+| 14.3.3 | E2E: HITL flow | Запрос "ROI vs benchmarks" → план (analytics + research) → approve → результат |
+| 14.3.4 | E2E: streaming | Прогресс нод виден в реальном времени в React UI |
+| 14.3.5 | Playwright скриншоты | 4 скриншота: welcome state, HITL approval, streaming progress, full result. Визуально соответствуют design system |
+| 14.3.6 | README обновлён | Секция "Quick Start" обновлена: `docker compose up` → UI на localhost:3000. Скриншоты React UI |
+| 14.3.7 | Регрессия | Все существующие тесты (98+) зелёные. Streamlit UI не удаляется (legacy) |
+
+**DOD интеграция:** полный flow работает через React + FastAPI. Playwright-скриншоты подтверждают.
+
+**Результат:** production-grade SPA вместо Streamlit. SSE streaming, типизированный API, responsive design.
+
+---
+
+## Phase 15: Google Ads / Meta Ads API
+
+**Цель:** подключение к реальным рекламным кабинетам вместо CSV. Данные подтягиваются по API, анализируются теми же агентами.
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 15.1 | Google Ads connector | `tools/google_ads.py` — подключение через Google Ads API (google-ads-python). Функция `fetch_campaigns(date_from, date_to) -> DataFrame`. Поля: campaign_name, impressions, clicks, conversions, cost, revenue |
+| 15.2 | Meta Ads connector | `tools/meta_ads.py` — подключение через Marketing API (facebook-business). Функция `fetch_campaigns(date_from, date_to) -> DataFrame`. Те же поля |
+| 15.3 | Yandex Direct connector | `tools/yandex_direct.py` — подключение через Yandex Direct API v5. Функция `fetch_campaigns(date_from, date_to) -> DataFrame` |
+| 15.4 | Unified data layer | `tools/data_loader.py` обновлён: `load_data(source)` принимает `"csv"`, `"google_ads"`, `"meta"`, `"yandex"`. Возвращает единый DataFrame с нормализованными столбцами |
+| 15.5 | OAuth flow | FastAPI endpoints: `GET /api/connect/google`, `GET /api/connect/meta`. OAuth2 redirect flow. Токены хранятся в `.env` / DB |
+| 15.6 | UI: data sources | React sidebar: секция "Data Sources" — статус подключения (connected/disconnected) для каждого сервиса. Кнопка "Connect" |
+| 15.7 | Тесты | 4+ теста: mock Google Ads API возвращает DataFrame с правильными столбцами, unified loader нормализует данные из разных источников, analytics agent работает с live-данными так же как с CSV, disconnect/reconnect flow |
+
+**Результат:** подключил Google Ads → "покажи ROI" → реальные данные из кабинета, а не CSV.
+
+---
+
+## Phase 16: Research Agent — SPEC compliance
+
+**Цель:** довести Research Agent до полного соответствия SPEC: FireCrawl для структурированного скрейпинга, RSS для мониторинга, sentiment analysis для brand mentions.
+
+### 16.1 FireCrawl integration
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 16.1.1 | FireCrawl tool | `tools/firecrawl_scraper.py` — обёртка над FireCrawl API. Функция `firecrawl_scrape(url) -> str` возвращает structured markdown. Fallback на BeautifulSoup при отсутствии ключа |
+| 16.1.2 | Интеграция в Research Agent | `research.py` — FireCrawl как primary scraper, BS4 как fallback. LLM tool calling использует оба |
+| 16.1.3 | Тесты | 2+ теста: firecrawl tool возвращает structured content (mock), fallback на BS4 работает без API key |
+
+### 16.2 RSS feeds
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 16.2.1 | RSS tool | `tools/rss.py` — `fetch_rss(url, max_items=10) -> str`. Парсит RSS/Atom feed (feedparser). Возвращает title + summary + link для каждой статьи |
+| 16.2.2 | Preset feeds | Список маркетинговых RSS: MarketingLand, Search Engine Journal, HubSpot. Функция `fetch_marketing_news() -> str` |
+| 16.2.3 | Интеграция в Research | RSS tool добавлен в `TOOLS` списка Research Agent. На запросы про "новости", "что нового" — вызывается RSS |
+| 16.2.4 | Тесты | 2+ теста: RSS парсинг mock-фида возвращает items, preset feeds возвращает данные |
+
+### 16.3 Sentiment analysis
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 16.3.1 | Sentiment tool | `tools/sentiment.py` — `analyze_sentiment(texts: list[str]) -> list[dict]`. Возвращает `{text, sentiment: positive/negative/neutral, score: float}`. Используем TextBlob или VADER (без тяжёлых моделей) |
+| 16.3.2 | Brand mention monitoring | Функция `monitor_brand(brand_name) -> str` — Tavily search по бренду → sentiment analysis каждого результата → summary: "X positive, Y negative, Z neutral mentions" |
+| 16.3.3 | Интеграция в Research | На запросы "что пишут про бренд X", "reputation" — Research agent вызывает monitor_brand |
+| 16.3.4 | Тесты | 3+ теста: sentiment правильно классифицирует positive/negative/neutral, monitor_brand возвращает summary с counts, integration в граф через Research agent |
+
+**DOD Phase 16:** Research Agent поддерживает FireCrawl, RSS, sentiment. Все новые тесты зелёные + 0 регрессий.
+
+**Результат:** "Что пишут про наш бренд?" → sentiment summary + sources. "Новости в маркетинге?" → RSS digest.
+
+---
+
+## Phase 17: Analytics Agent — SPEC compliance
+
+**Цель:** довести Analytics Agent до полного соответствия SPEC: SQL loader для баз данных, Google Sheets для онлайн-таблиц, LTV/когорты, сегментация аудитории.
+
+### 17.1 SQL loader
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 17.1.1 | SQL tool | `tools/sql_loader.py` — `query_sql(connection_string, query) -> DataFrame`. Поддержка SQLite и PostgreSQL (sqlalchemy). Валидация: только SELECT, без мутаций |
+| 17.1.2 | Demo SQLite | `data/demo.db` — SQLite база с таблицей `campaigns` (те же данные что в demo_campaigns.csv). Скрипт генерации: `data/generate_db.py` |
+| 17.1.3 | Интеграция в Analytics | `data_loader.py`: `load_dataframe(path)` — если path заканчивается на `.db` или начинается с `postgresql://`, использует SQL loader. CSV остаётся дефолтом |
+| 17.1.4 | Тесты | 3+ теста: SQL tool загружает из SQLite, возвращает DataFrame с правильными столбцами, SELECT-only валидация блокирует DELETE/UPDATE |
+
+### 17.2 Advanced metrics (LTV, когорты)
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 17.2.1 | LTV расчёт | `tools/data_loader.py`: `compute_metrics(metric="ltv")` — LTV = revenue / conversions per channel. Группировка по каналам |
+| 17.2.2 | Когортный анализ | `tools/data_loader.py`: `compute_metrics(metric="cohort")` — группировка по месяцу первого касания, retention по последующим месяцам. Возвращает таблицу retention |
+| 17.2.3 | Тесты | 2+ теста: LTV возвращает числа для каждого канала, когортная таблица имеет правильную форму (месяцы × когорты) |
+
+### 17.3 Сегментация аудитории
+
+| # | Задача | DOD |
+|---|--------|-----|
+| 17.3.1 | Сегментация по поведению | `tools/segmentation.py` — `segment_campaigns(df) -> str`. K-means кластеризация кампаний по нормализованным метрикам (CTR, CPA, ROAS). Возвращает 3-5 сегментов с описанием: "Высокий ROI / низкий объём", "Массовый охват / низкая конверсия" |
+| 17.3.2 | Визуализация | Scatter plot сегментов (spend vs ROAS, цвет = кластер). base64 PNG через matplotlib |
+| 17.3.3 | Интеграция | На запросы "сегментируй кампании", "какие группы кампаний" — Analytics agent вызывает segmentation |
+| 17.3.4 | Тесты | 3+ теста: сегментация возвращает 3+ кластеров, каждый кластер имеет label и описание, scatter plot генерируется в base64 |
+
+**DOD Phase 17:** Analytics Agent поддерживает SQL, LTV, когорты, сегментацию. Все новые тесты зелёные + 0 регрессий.
+
+**Результат:** "Сегментируй наши кампании" → кластеры + scatter plot. "Покажи LTV по каналам" → таблица + интерпретация.
 
 ---
 
@@ -309,6 +491,14 @@
 | 8. README + Polish | 1 сессия |
 | 9. Intelligent Report Layer | 1 сессия |
 | 10. UX/UI Audit & Polish | 1 сессия |
-| **Итого** | **9-11 сессий** |
+| 11. Strategy Agent | 1 сессия |
+| 12. MCP Server | 1 сессия |
+| 13. RAG по документам | 1-2 сессии |
+| 14. React UI + FastAPI | 2-3 сессии |
+| 15. Google Ads / Meta Ads API | 1-2 сессии |
+| 16. Research Agent SPEC compliance | 1 сессия |
+| 17. Analytics Agent SPEC compliance | 1-2 сессии |
+| **Итого MVP (1-10)** | **9-11 сессий** |
+| **Итого полный (1-17)** | **16-23 сессии** |
 
 > 1 сессия = один рабочий заход с Claude Code.

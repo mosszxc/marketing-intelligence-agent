@@ -139,8 +139,21 @@ def compute_metrics(metric: str, group_by: str = "", path: str = "") -> str:
         agg["CPA"] = (agg["spend"] / agg["conversions"].replace(0, 1)).round(0)
         agg["CTR%"] = (agg["clicks"] / agg["impressions"].replace(0, 1) * 100).round(2)
         result = agg[["spend", "revenue", "ROAS", "CPA", "CTR%"]].to_string()
+    elif metric == "ltv":
+        agg["LTV"] = (agg["revenue"] / agg["conversions"].replace(0, 1)).round(0)
+        result = agg[["conversions", "revenue", "LTV"]].to_string()
+    elif metric == "cohort":
+        # Group by month as cohort
+        df_copy = df.copy()
+        df_copy["month"] = df_copy["date"].dt.to_period("M")
+        cohort = df_copy.groupby("month").agg({
+            "spend": "sum", "revenue": "sum", "conversions": "sum",
+        })
+        cohort["ROAS"] = (cohort["revenue"] / cohort["spend"].replace(0, 1)).round(2)
+        cohort["CPA"] = (cohort["spend"] / cohort["conversions"].replace(0, 1)).round(0)
+        result = cohort.to_string()
     else:
-        return f"Unknown metric: {metric}. Use: roi, roas, cpa, ctr, conversion_rate, summary."
+        return f"Unknown metric: {metric}. Use: roi, roas, cpa, ctr, conversion_rate, summary, ltv, cohort."
 
     return f"Metric: {metric} | Grouped by: {group_by}\n\n{result}"
 

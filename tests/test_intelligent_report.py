@@ -9,10 +9,8 @@ Validates that the system answers like an analyst, not a data pipe:
 
 import uuid
 
-import pytest
 
 from src.agents.analytics import run_analytics_no_llm
-from src.agents.report import format_report
 from src.graph import build_graph
 
 
@@ -136,10 +134,6 @@ class TestAnomalyPrioritization:
     def test_anomalies_limited_count(self):
         """Report should show ≤5 key problems, not 20 z-score lines."""
         answer = _run_query("Найди аномалии в данных")
-        # Count problem items (lines starting with number or bullet)
-        import re
-        problems = re.findall(r"(?:^|\n)\s*(?:\d+[\.\):]|[-•▸])\s+", answer)
-        # There can be other lists too, but anomaly items should be ≤ ~10
         # The key check: no 20-line z-score dump
         assert "z=" not in answer, (
             "Raw z-score values should not appear in report"

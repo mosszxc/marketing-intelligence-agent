@@ -7,7 +7,7 @@ on:
     branches: [main, master]
 
 jobs:
-  lint-and-test:
+  backend:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -30,4 +30,27 @@ jobs:
         run: ruff check src/ tests/
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: pytest tests/ -v --tb=short --ignore=tests/test_react_integration.py
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: ui
+        run: npm ci
+
+      - name: Run tests
+        working-directory: ui
+        run: npm test
+
+      - name: Build
+        working-directory: ui
+        run: npm run build

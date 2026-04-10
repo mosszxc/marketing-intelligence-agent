@@ -60,6 +60,31 @@ def format_report(query: str, agent_outputs: dict[str, AgentOutput]) -> str:
             if charts:
                 parts.append(f"\n*Графиков: {len(charts)}*")
 
+    # Strategy section
+    if "strategy" in agent_outputs:
+        strategy = agent_outputs["strategy"]
+        error = strategy.get("error")
+        parts.append("\n## Стратегия\n")
+        if error:
+            parts.append(f"**Ошибка:** {error}")
+        else:
+            summary = strategy.get("summary", "Нет данных.")
+            summary = _strip_debug(summary)
+            if summary:
+                parts.append(summary)
+
+    # RAG section
+    if "rag" in agent_outputs:
+        rag = agent_outputs["rag"]
+        error = rag.get("error")
+        parts.append("\n## Из документов компании\n")
+        if error:
+            parts.append(f"**Ошибка:** {error}")
+        else:
+            summary = rag.get("summary", "Нет данных.")
+            if summary:
+                parts.append(summary)
+
     # Research section
     if "research" in agent_outputs:
         research = agent_outputs["research"]

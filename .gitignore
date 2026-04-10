@@ -8,4 +8,9 @@ build/
 .pytest_cache/
 .ruff_cache/
 data/eval_results.json
+data/user_upload.csv
 .playwright-mcp/
+node_modules/
+ui/dist/
+ui/node_modules/
+static/

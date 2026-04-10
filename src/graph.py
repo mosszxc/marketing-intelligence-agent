@@ -6,8 +6,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from src.agents.analytics import run_analytics, run_analytics_no_llm
+from src.agents.rag import run_rag
 from src.agents.report import format_report
 from src.agents.research import run_research, run_research_no_llm
+from src.agents.strategy import run_strategy
 from src.agents.supervisor import classify_query
 from src.state import GraphState
 
@@ -101,6 +103,56 @@ def _make_research_node():
     return research_agent
 
 
+def _make_strategy_node():
+    """Factory: returns strategy node with error handling."""
+
+    def strategy_agent(state: GraphState) -> dict:
+        """Generate budget recommendations and what-if projections."""
+        query = state.get("query", "")
+        outputs = dict(state.get("agent_outputs", {}))
+
+        try:
+            result = run_strategy(query)
+        except Exception as exc:
+            result = {
+                "summary": "",
+                "data": {},
+                "charts": [],
+                "sources": [],
+                "error": f"Strategy agent error: {exc}",
+            }
+
+        outputs["strategy"] = result
+        return {"agent_outputs": outputs}
+
+    return strategy_agent
+
+
+def _make_rag_node():
+    """Factory: returns RAG node with error handling."""
+
+    def rag_agent(state: GraphState) -> dict:
+        """Retrieve and answer from company documents."""
+        query = state.get("query", "")
+        outputs = dict(state.get("agent_outputs", {}))
+
+        try:
+            result = run_rag(query)
+        except Exception as exc:
+            result = {
+                "summary": "",
+                "data": {},
+                "charts": [],
+                "sources": [],
+                "error": f"RAG agent error: {exc}",
+            }
+
+        outputs["rag"] = result
+        return {"agent_outputs": outputs}
+
+    return rag_agent
+
+
 def synthesize(state: GraphState) -> dict:
     """Combine agent outputs into a formatted report."""
     query = state.get("query", "")
@@ -132,6 +184,8 @@ def build_graph(
     workflow.add_node("supervisor", supervisor)
     workflow.add_node("analytics", _make_analytics_node(inject_error=inject_analytics_error))
     workflow.add_node("research", _make_research_node())
+    workflow.add_node("strategy", _make_strategy_node())
+    workflow.add_node("rag", _make_rag_node())
     workflow.add_node("synthesize", synthesize)
 
     # Edges
@@ -142,6 +196,8 @@ def build_graph(
         {
             "analytics": "analytics",
             "research": "research",
+            "strategy": "strategy",
+            "rag": "rag",
             "synthesize": "synthesize",
         },
     )
@@ -150,17 +206,21 @@ def build_graph(
         route_agents,
         {
             "research": "research",
+            "strategy": "strategy",
+            "rag": "rag",
             "synthesize": "synthesize",
         },
     )
     workflow.add_edge("research", "synthesize")
+    workflow.add_edge("strategy", "synthesize")
+    workflow.add_edge("rag", "synthesize")
     workflow.add_edge("synthesize", END)
 
     # Checkpointer — always enabled for thread-based state persistence
     checkpointer = MemorySaver()
 
     # Human-in-the-loop: interrupt after supervisor, before agents execute
-    interrupt_before = ["analytics", "research"] if human_in_the_loop else None
+    interrupt_before = ["analytics", "research", "strategy", "rag"] if human_in_the_loop else None
 
     return workflow.compile(
         checkpointer=checkpointer,

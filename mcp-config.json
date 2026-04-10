@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "marketing-intelligence": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": ".",
+      "env": {}
+    }
+  }
+}

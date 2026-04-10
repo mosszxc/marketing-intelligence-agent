@@ -79,7 +79,7 @@ docker compose up
 
 | Empty State | HITL Approval | Analytics Result |
 |:-:|:-:|:-:|
-| ![Empty](screenshots/redesign-empty.png) | ![HITL](screenshots/redesign-hitl.png) | ![Result](screenshots/redesign-result.png) |
+| ![Empty](screenshots/after-empty.png) | ![HITL](screenshots/after-hitl.png) | ![Result](screenshots/after-result.png) |
 
 ## Features
 

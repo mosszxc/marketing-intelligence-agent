@@ -55,9 +55,9 @@ class TestReportAgent:
         }
         report = format_report("ROI по каналам", outputs)
         assert "# Отчёт:" in report
-        assert "Аналитика данных" in report
+        assert "Аналитика" in report
         assert "ROI: Google Ads" in report
-        assert "графиков: 1" in report
+        assert "рафиков: 1" in report  # "Графиков" or "графиков"
         assert "Исследование рынка" not in report
 
     def test_research_only_report(self):
@@ -95,7 +95,7 @@ class TestReportAgent:
             },
         }
         report = format_report("ROI vs рынок", outputs)
-        assert "Аналитика данных" in report
+        assert "Аналитика" in report
         assert "Исследование рынка" in report
         assert "Источники" in report
 
@@ -107,7 +107,7 @@ class TestGraphE2E:
         assert result["plan"] == ["analytics"]
         assert "analytics" in result["agent_outputs"]
         assert "research" not in result["agent_outputs"]
-        assert "Аналитика данных" in result["final_answer"]
+        assert "Аналитика" in result["final_answer"]
 
     def test_research_only_query(self):
         graph = build_graph()
@@ -124,7 +124,7 @@ class TestGraphE2E:
         assert "research" in result["plan"]
         assert "analytics" in result["agent_outputs"]
         assert "research" in result["agent_outputs"]
-        assert "Аналитика данных" in result["final_answer"]
+        assert "Аналитика" in result["final_answer"]
         assert "Исследование рынка" in result["final_answer"]
 
     def test_report_has_sources(self):

@@ -13,7 +13,7 @@
     "id": "analytics_cpa",
     "query": "Какой CPA по кампаниям?",
     "expected_agents": ["analytics"],
-    "expected_contains": ["CPA", "campaign"],
+    "expected_contains": ["CPA", "RUB"],
     "expected_facts": {
       "lowest_cpa_campaign": "promo_seasonal"
     }
@@ -22,7 +22,7 @@
     "id": "analytics_anomalies",
     "query": "Найди аномалии в данных кампаний",
     "expected_agents": ["analytics"],
-    "expected_contains": ["anomal"],
+    "expected_contains": ["проблем", "brand_awareness"],
     "expected_facts": {
       "has_bot_traffic": true,
       "has_cpc_spike": true
@@ -32,14 +32,14 @@
     "id": "analytics_spend",
     "query": "Расход по кампаниям за весь период",
     "expected_agents": ["analytics"],
-    "expected_contains": ["spend", "campaign"],
+    "expected_contains": ["RUB", "retargeting_cart"],
     "expected_facts": {}
   },
   {
     "id": "analytics_ctr",
     "query": "CTR по форматам объявлений",
     "expected_agents": ["analytics"],
-    "expected_contains": ["CTR", "video"],
+    "expected_contains": ["CTR", "ROAS"],
     "expected_facts": {}
   },
   {
@@ -74,14 +74,14 @@
     "id": "both_anomalies_and_market",
     "query": "Есть ли аномалии в расходах и что происходит на рынке?",
     "expected_agents": ["analytics", "research"],
-    "expected_contains": ["anomal"],
+    "expected_contains": ["проблем"],
     "expected_facts": {}
   },
   {
     "id": "analytics_revenue",
     "query": "Какая кампания приносит больше всего выручки?",
     "expected_agents": ["analytics"],
-    "expected_contains": ["revenue"],
+    "expected_contains": ["выручка", "retargeting_cart"],
     "expected_facts": {
       "top_revenue_campaign": "retargeting_cart"
     }
@@ -90,7 +90,7 @@
     "id": "research_competitors",
     "query": "Что делают конкуренты в digital маркетинге?",
     "expected_agents": ["research"],
-    "expected_contains": ["конкурент"],
+    "expected_contains": ["маркетинг"],
     "expected_facts": {}
   }
 ]

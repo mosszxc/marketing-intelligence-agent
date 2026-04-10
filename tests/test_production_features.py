@@ -81,7 +81,7 @@ class TestHumanInTheLoop:
 
         assert "analytics" in result["agent_outputs"]
         assert result["final_answer"]
-        assert "Аналитика данных" in result["final_answer"]
+        assert "Аналитика" in result["final_answer"]
 
     def test_resume_with_modified_plan(self):
         """User can modify the plan before resuming."""

@@ -7,7 +7,12 @@ from langchain_openai import ChatOpenAI
 
 from src.state import AgentOutput
 from src.tools.charts import create_chart
-from src.tools.data_loader import compute_metrics, detect_anomalies, load_campaign_data
+from src.tools.data_loader import (
+    compute_metrics, detect_anomalies, load_campaign_data, load_dataframe,
+)
+from src.tools.interpreter import (
+    classify_anomalies, generate_recommendations, interpret_metrics,
+)
 
 TOOLS = [load_campaign_data, compute_metrics, detect_anomalies, create_chart]
 
@@ -68,43 +73,48 @@ def run_analytics(query: str) -> AgentOutput:
 
 
 def run_analytics_no_llm(query: str) -> AgentOutput:
-    """Fallback analytics without LLM — keyword-based routing for demos/tests."""
+    """Fallback analytics without LLM — keyword-based routing for demos/tests.
+
+    Uses interpreter layer for human-readable output instead of raw data dumps.
+    """
     query_lower = query.lower()
-
-    data_summary = load_campaign_data.invoke({"path": ""})
-
+    df = load_dataframe()
     charts: list[str] = []
+    anomaly_text = ""
 
-    if any(w in query_lower for w in ["roi", "рои", "окупаемость", "эффективность", "roas"]):
-        metrics = compute_metrics.invoke({"metric": "roas", "group_by": ""})
-        chart = create_chart.invoke({"chart_type": "bar", "metric": "roas"})
-        charts.append(chart)
-    elif any(w in query_lower for w in ["cpa", "стоимость", "цена", "расход", "spend"]):
-        metrics = compute_metrics.invoke({"metric": "cpa", "group_by": ""})
-        chart = create_chart.invoke({"chart_type": "bar", "metric": "spend"})
-        charts.append(chart)
-    elif any(w in query_lower for w in ["аномал", "проблем", "anomal", "бот", "мусор"]):
-        metrics = detect_anomalies.invoke({"threshold": 2.0})
+    # Route to the right analysis
+    if any(w in query_lower for w in ["аномал", "проблем", "anomal", "бот", "мусор"]):
+        # Anomaly path — classified, prioritized
+        anomaly_text = classify_anomalies(df, threshold=2.0)
         chart = create_chart.invoke({"chart_type": "line", "metric": "spend"})
         charts.append(chart)
+        interpretation = anomaly_text
     elif any(w in query_lower for w in ["ctr", "клик", "click"]):
-        metrics = compute_metrics.invoke({"metric": "ctr", "group_by": ""})
+        interpretation = interpret_metrics(df)
         chart = create_chart.invoke({"chart_type": "bar", "metric": "ctr"})
         charts.append(chart)
     elif any(w in query_lower for w in ["формат", "format", "video", "banner"]):
-        metrics = compute_metrics.invoke({"metric": "summary", "group_by": "ad_format"})
+        interpretation = interpret_metrics(df, group_by="ad_format")
         chart = create_chart.invoke({"chart_type": "bar", "metric": "spend", "group_by": "ad_format"})
         charts.append(chart)
     elif any(w in query_lower for w in ["устройств", "device", "mobile", "desktop"]):
-        metrics = compute_metrics.invoke({"metric": "summary", "group_by": "device"})
+        interpretation = interpret_metrics(df, group_by="device")
         chart = create_chart.invoke({"chart_type": "pie", "metric": "conversions", "group_by": "device"})
         charts.append(chart)
     else:
-        metrics = compute_metrics.invoke({"metric": "summary", "group_by": ""})
-        chart = create_chart.invoke({"chart_type": "bar", "metric": "revenue"})
+        # Default: full interpretation (covers ROI, ROAS, budget, best/worst)
+        interpretation = interpret_metrics(df)
+        chart = create_chart.invoke({"chart_type": "bar", "metric": "roas"})
         charts.append(chart)
 
-    summary = f"{data_summary}\n\n{metrics}"
+    # Always add recommendations
+    recs = generate_recommendations(df, anomaly_text)
+    parts = [interpretation]
+    if recs:
+        parts.append("")
+        parts.append(recs)
+
+    summary = "\n".join(parts)
 
     return AgentOutput(
         summary=summary,

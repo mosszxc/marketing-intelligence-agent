@@ -121,4 +121,4 @@ class TestAnalyticsAgentNoLLM:
     def test_generic_query(self):
         result = run_analytics_no_llm("Общая сводка по кампаниям")
         assert result["summary"]
-        assert "8688 rows" in result["summary"]
+        assert "ROAS" in result["summary"]

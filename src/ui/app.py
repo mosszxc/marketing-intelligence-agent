@@ -2,7 +2,7 @@
 
 Design system: Data-Dense Dashboard (ui-ux-pro-max)
 Colors: Primary #1E40AF, Secondary #3B82F6, CTA #F59E0B, BG #F8FAFC, Text #1E3A8A
-Typography: Fira Code (headings/data) / Fira Sans (body)
+Typography: Fira Code (data/headings) / Inter (body)
 """
 
 import base64
@@ -50,7 +50,6 @@ st.markdown("""
     --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
     --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
-    --shadow-lg: 0 10px 15px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.04);
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
@@ -68,48 +67,86 @@ h1, h2, h3, h4, h5, h6, [data-testid="stHeading"] {
     letter-spacing: -0.025em;
 }
 
-/* Hide Streamlit chrome */
+/* ===== HIDE STREAMLIT CHROME ===== */
 header[data-testid="stHeader"] { background: transparent !important; }
 #MainMenu, footer, header .stDeployButton { display: none !important; }
 [data-testid="stToolbar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
-/* Main container */
-[data-testid="stMain"] > div { padding-top: 1rem !important; }
-.block-container { max-width: 900px !important; padding: 1rem 2rem 4rem !important; }
+/* Hide sidebar collapse button text */
+[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+button[kind="header"] { display: none !important; }
+
+/* Hide heading anchor links (the chain icon) */
+[data-testid="stHeading"] a { display: none !important; }
+.stMarkdown h1 a, .stMarkdown h2 a, .stMarkdown h3 a { display: none !important; }
+
+/* ===== AVATAR ICONS ===== */
+/* Styled by JS below — hide Material Icon font rendering */
+[data-testid="chatAvatarIcon-user"],
+[data-testid="chatAvatarIcon-assistant"] {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    -webkit-font-feature-settings: normal !important;
+    font-feature-settings: normal !important;
+}
+[data-testid="chatAvatarIcon-user"] {
+    background: var(--primary-lighter) !important;
+    color: var(--primary) !important;
+    font-size: 12px !important;
+}
+[data-testid="chatAvatarIcon-assistant"] {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%) !important;
+    color: white !important;
+    font-size: 10px !important;
+}
+
+/* Hide sidebar collapse arrow */
+[data-testid="stSidebarCollapseButton"] {
+    display: none !important;
+}
+
+/* ===== MAIN CONTAINER ===== */
+[data-testid="stMain"] > div { padding-top: 0.5rem !important; }
+.block-container { max-width: 860px !important; padding: 0.75rem 2rem 4rem !important; }
 
 /* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-dark-2) 100%) !important;
     border-right: 1px solid #1E293B !important;
+    width: 260px !important;
 }
-[data-testid="stSidebarCollapsedControl"] { display: none !important; }
-button[kind="header"] { display: none !important; }
-
-/* Sidebar text */
 [data-testid="stSidebar"] * { color: #CBD5E1 !important; }
 [data-testid="stSidebar"] h1 {
     color: #F8FAFC !important;
-    font-size: 1.15rem !important;
+    font-size: 1.05rem !important;
     font-weight: 700 !important;
-    margin-bottom: 0.25rem !important;
+    margin-bottom: 0.15rem !important;
 }
 [data-testid="stSidebar"] h3 {
     color: #64748B !important;
-    font-size: 0.65rem !important;
+    font-size: 0.6rem !important;
     text-transform: uppercase;
     letter-spacing: 0.12em;
     font-weight: 600 !important;
-    margin-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+    margin-top: 0.4rem !important;
+    margin-bottom: 0.35rem !important;
 }
 [data-testid="stSidebar"] hr {
     border-color: rgba(255,255,255,0.06) !important;
-    margin: 0.75rem 0 !important;
+    margin: 0.5rem 0 !important;
 }
 [data-testid="stSidebar"] p {
-    font-size: 0.82rem !important;
-    line-height: 1.5 !important;
+    font-size: 0.78rem !important;
+    line-height: 1.4 !important;
 }
 
 /* Sidebar buttons */
@@ -118,9 +155,9 @@ button[kind="header"] { display: none !important; }
     border: 1px solid rgba(255,255,255,0.08) !important;
     color: #E2E8F0 !important;
     border-radius: var(--radius-sm) !important;
-    font-size: 0.82rem !important;
+    font-size: 0.78rem !important;
     font-weight: 500 !important;
-    padding: 0.5rem 0.75rem !important;
+    padding: 0.4rem 0.6rem !important;
     transition: all 150ms ease !important;
     cursor: pointer !important;
 }
@@ -128,38 +165,34 @@ button[kind="header"] { display: none !important; }
     background: rgba(59, 130, 246, 0.12) !important;
     border-color: rgba(59, 130, 246, 0.3) !important;
     color: #F8FAFC !important;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
 }
 
 /* Sidebar captions */
 [data-testid="stSidebar"] [data-testid="stCaption"] {
     font-family: 'Fira Code', monospace !important;
-    font-size: 0.65rem !important;
+    font-size: 0.6rem !important;
     color: #475569 !important;
 }
 
 /* ===== MAIN TITLE ===== */
 .block-container h1:first-of-type {
-    font-size: 1.5rem !important;
+    font-size: 1.25rem !important;
     color: var(--text) !important;
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
     border-bottom: 2px solid var(--border) !important;
-    margin-bottom: 1.5rem !important;
+    margin-bottom: 1rem !important;
 }
 
 /* ===== CHAT MESSAGES ===== */
 [data-testid="stChatMessage"] {
-    border-radius: var(--radius-lg) !important;
+    border-radius: var(--radius-md) !important;
     border: 1px solid var(--border) !important;
     box-shadow: var(--shadow-xs) !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 0.75rem !important;
-    transition: box-shadow 200ms ease, border-color 200ms ease !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.5rem !important;
     background: var(--surface) !important;
 }
 [data-testid="stChatMessage"]:hover {
-    box-shadow: var(--shadow-sm) !important;
     border-color: var(--primary-lighter) !important;
 }
 
@@ -172,16 +205,15 @@ button[kind="header"] { display: none !important; }
 /* ===== CHAT INPUT ===== */
 [data-testid="stChatInput"] {
     border-top: 1px solid var(--border) !important;
-    padding-top: 0.75rem !important;
+    padding-top: 0.5rem !important;
     background: var(--bg) !important;
 }
 [data-testid="stChatInput"] textarea {
     font-family: 'Inter', sans-serif !important;
-    font-size: 0.9rem !important;
+    font-size: 0.88rem !important;
     border-radius: var(--radius-lg) !important;
     border: 1.5px solid var(--border) !important;
-    padding: 0.85rem 1rem !important;
-    transition: border-color 200ms ease, box-shadow 200ms ease !important;
+    padding: 0.75rem 1rem !important;
     background: var(--surface) !important;
 }
 [data-testid="stChatInput"] textarea:focus {
@@ -195,28 +227,42 @@ button[kind="header"] { display: none !important; }
     border: 1px solid var(--primary-lighter) !important;
     border-left: 4px solid var(--primary) !important;
     background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%) !important;
-    padding: 1rem 1.25rem !important;
-    font-size: 0.9rem !important;
+    padding: 0.85rem 1.15rem !important;
+    font-size: 0.88rem !important;
 }
 
-/* ===== APPROVE BUTTONS ===== */
+/* ===== BUTTONS ===== */
+/* Default (secondary) */
 .stButton > button {
     border-radius: var(--radius-sm) !important;
     font-family: 'Inter', sans-serif !important;
     font-weight: 600 !important;
-    font-size: 0.85rem !important;
-    padding: 0.6rem 1.25rem !important;
+    font-size: 0.82rem !important;
+    padding: 0.5rem 1rem !important;
     transition: all 150ms ease !important;
     cursor: pointer !important;
     border: 1.5px solid var(--border) !important;
     background: var(--surface) !important;
-    color: var(--text) !important;
+    color: var(--text-secondary) !important;
 }
 .stButton > button:hover {
     border-color: var(--primary-light) !important;
     color: var(--primary) !important;
     box-shadow: var(--shadow-sm) !important;
-    transform: translateY(-1px);
+}
+
+/* Primary button — Approve action */
+[data-testid="stBaseButton-primary"] {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    box-shadow: var(--shadow-sm) !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: #1D4ED8 !important;
+    border-color: #1D4ED8 !important;
+    color: white !important;
+    box-shadow: var(--shadow-md) !important;
 }
 
 /* ===== STATUS/STREAMING ===== */
@@ -224,18 +270,18 @@ button[kind="header"] { display: none !important; }
     border-radius: var(--radius-md) !important;
     border: 1px solid var(--border) !important;
     background: var(--surface) !important;
-    font-size: 0.85rem !important;
+    font-size: 0.82rem !important;
 }
 [data-testid="stStatusWidget"] p {
     font-family: 'Fira Code', monospace !important;
-    font-size: 0.8rem !important;
+    font-size: 0.78rem !important;
     color: var(--text-secondary) !important;
 }
 
 /* ===== CAPTIONS ===== */
 [data-testid="stCaption"] {
     font-family: 'Fira Code', monospace !important;
-    font-size: 0.7rem !important;
+    font-size: 0.65rem !important;
     color: var(--text-muted) !important;
 }
 
@@ -247,41 +293,74 @@ button[kind="header"] { display: none !important; }
     overflow: hidden;
     margin: 0.5rem 0 !important;
 }
+/* Hide fullscreen button on images */
+[data-testid="stImage"] button { display: none !important; }
 
 /* ===== MARKDOWN (reports) ===== */
-.stMarkdown h1 { font-size: 1.25rem !important; }
-.stMarkdown h2 {
+/* Report title — smaller, inline */
+[data-testid="stChatMessage"] .stMarkdown h1 {
     font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+/* Section headings */
+.stMarkdown h2 {
+    font-size: 0.9rem !important;
     color: var(--primary) !important;
-    margin-top: 1.25rem !important;
-    padding-bottom: 0.35rem;
+    margin-top: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-bottom: 0.25rem;
     border-bottom: 1px solid var(--border-light);
 }
-.stMarkdown p { font-size: 0.88rem !important; line-height: 1.65 !important; color: var(--text-secondary) !important; }
+
+/* Body text */
+.stMarkdown p {
+    font-size: 0.85rem !important;
+    line-height: 1.6 !important;
+    color: var(--text-secondary) !important;
+}
 .stMarkdown strong { color: var(--text) !important; }
+
+/* Lists in reports */
+.stMarkdown ul, .stMarkdown ol {
+    font-size: 0.85rem !important;
+    color: var(--text-secondary) !important;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+}
+.stMarkdown li {
+    margin-bottom: 0.3rem !important;
+    line-height: 1.5 !important;
+}
+.stMarkdown li strong { color: var(--text) !important; }
+
+/* Code blocks */
 .stMarkdown code {
     font-family: 'Fira Code', monospace !important;
     background: var(--border-light) !important;
     color: var(--primary) !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    font-size: 0.82rem !important;
+    padding: 2px 5px !important;
+    border-radius: 3px !important;
+    font-size: 0.8rem !important;
 }
-.stMarkdown table { font-size: 0.82rem !important; width: 100% !important; }
+
+/* Tables */
+.stMarkdown table { font-size: 0.8rem !important; width: 100% !important; }
 .stMarkdown th {
     background: var(--bg) !important;
     color: var(--text-secondary) !important;
     font-weight: 600 !important;
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
     border-bottom: 2px solid var(--border) !important;
     text-align: left !important;
 }
 .stMarkdown td {
-    padding: 6px 12px !important;
+    padding: 5px 10px !important;
     border-bottom: 1px solid var(--border-light) !important;
     color: var(--text-secondary) !important;
 }
-.stMarkdown tr:hover td { background: rgba(59, 130, 246, 0.03) !important; }
 
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 5px; }
@@ -291,10 +370,11 @@ button[kind="header"] { display: none !important; }
 
 /* ===== REDUCED MOTION ===== */
 @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; transform: none !important; }
+    * { transition: none !important; animation: none !important; }
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------------------------
 # Session state
@@ -358,7 +438,7 @@ def _run_graph_streaming(query: str | None):
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.title("Marketing Intelligence")
-    st.caption("Multi-agent analytics powered by LangGraph")
+    st.caption("Multi-agent analytics  ·  LangGraph")
     st.divider()
 
     if st.button("New conversation", use_container_width=True, type="primary"):
@@ -377,12 +457,12 @@ with st.sidebar:
             st.session_state.pending_query = ex
 
     st.divider()
-    st.markdown("### System")
+    st.markdown("### Agents")
     st.markdown(
-        "**Supervisor** classify & route\n\n"
-        "**Analytics** CSV metrics, charts\n\n"
-        "**Research** web search, trends\n\n"
-        "**Report** final synthesis"
+        "**Supervisor** — classify & route\n\n"
+        "**Analytics** — data, metrics, charts\n\n"
+        "**Research** — web, trends\n\n"
+        "**Report** — synthesis"
     )
     st.divider()
     st.caption(f"thread {st.session_state.thread_id[:8]}")
@@ -397,22 +477,22 @@ if not st.session_state.messages and not st.session_state.awaiting_approval:
     st.markdown("""
 <div style="
     text-align: center;
-    padding: 3rem 2rem;
+    padding: 2.5rem 1.5rem 1.5rem;
     color: #94A3B8;
-    margin-top: 2rem;
 ">
-    <div style="font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.3;">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <div style="margin-bottom: 0.75rem;">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.4;">
             <line x1="18" y1="20" x2="18" y2="10"></line>
             <line x1="12" y1="20" x2="12" y2="4"></line>
             <line x1="6" y1="20" x2="6" y2="14"></line>
         </svg>
     </div>
-    <p style="font-size: 1.1rem; font-weight: 500; color: #64748B; margin-bottom: 0.5rem;">
-        Ask a question about your marketing data
+    <p style="font-size: 0.95rem; font-weight: 500; color: #64748B; margin: 0 0 0.35rem;">
+        Ask about your marketing data
     </p>
-    <p style="font-size: 0.85rem; color: #94A3B8; max-width: 420px; margin: 0 auto;">
-        The system will route your query to the right agents — analytics for data, research for market insights, or both.
+    <p style="font-size: 0.8rem; color: #94A3B8; max-width: 380px; margin: 0 auto; line-height: 1.5;">
+        Queries are routed to analytics, research, or both.
+        You approve the plan before execution.
     </p>
 </div>
 """, unsafe_allow_html=True)

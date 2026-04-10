@@ -48,23 +48,24 @@ def score_facts(expected_facts: dict, result: dict) -> float:
     total_checks = len(expected_facts)
 
     for fact_key, expected_value in expected_facts.items():
-        if fact_key == "best_roi_channel":
-            checks_passed += 1 if expected_value in answer else 0
-        elif fact_key == "worst_roi_channel":
-            checks_passed += 1 if expected_value in answer else 0
+        answer_lower = answer.lower()
+        if fact_key in ("best_roas_campaign", "worst_roas_campaign",
+                        "best_roi_channel", "worst_roi_channel",
+                        "lowest_cpa_campaign", "top_revenue_campaign"):
+            checks_passed += 1 if str(expected_value).lower() in answer_lower else 0
         elif fact_key == "all_roi_positive":
-            # All ROI values should be positive (no negative sign before ROI numbers)
-            checks_passed += 1 if "ROI" in answer else 0
-        elif fact_key == "has_tiktok_anomaly":
-            checks_passed += 1 if "tiktok" in answer.lower() else 0
-        elif fact_key == "has_email_anomaly":
-            checks_passed += 1 if "email" in answer.lower() else 0
-        elif fact_key == "lowest_cpa_channel":
-            checks_passed += 1 if expected_value in answer else 0
+            checks_passed += 1 if "roi" in answer_lower or "roas" in answer_lower else 0
+        elif fact_key == "has_bot_traffic":
+            checks_passed += 1 if "бот" in answer_lower or "bot" in answer_lower else 0
+        elif fact_key == "has_cpc_spike":
+            checks_passed += 1 if "spike" in answer_lower or "спайк" in answer_lower or "cpc" in answer_lower else 0
+        elif fact_key in ("has_tiktok_anomaly", "has_email_anomaly"):
+            val = fact_key.replace("has_", "").replace("_anomaly", "")
+            checks_passed += 1 if val in answer_lower else 0
         elif fact_key == "total_channels":
-            checks_passed += 1 if "6" in answer or "six" in answer.lower() else 0
+            checks_passed += 1 if "6" in answer or "six" in answer_lower else 0
         elif fact_key == "total_months":
-            checks_passed += 1 if "12" in answer or "twelve" in answer.lower() else 0
+            checks_passed += 1 if "12" in answer or "twelve" in answer_lower else 0
         else:
             total_checks -= 1  # Unknown fact, skip
 
